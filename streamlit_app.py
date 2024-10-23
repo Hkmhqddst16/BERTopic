@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import WordCloud
+from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import re
 
