@@ -6,7 +6,7 @@ import re
 
 st.set_page_config(page_title="BERTopic", page_icon="🤗")
 
-df = pd.read_csv("bertopic_results.csv")
+df = pd.read_csv("bertopic_results1.csv")
 st.title("Topic modeling using BERTopic")
 
 st.markdown("Mengambil 15 topik dan berikut 10 contoh dari isi topik :")
