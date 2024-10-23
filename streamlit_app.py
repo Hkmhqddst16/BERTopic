@@ -4,7 +4,7 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import re
 
-st.set_page_config(page_title="BERTopic", page_icon="🤗")
+st.set_page_config(page_title="BERTopic", page_icon="📝")
 
 df = pd.read_csv("bertopic_results.csv")
 st.title("Topic modeling using BERTopic")
