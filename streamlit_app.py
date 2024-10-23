@@ -9,10 +9,7 @@ st.set_page_config(page_title="BERTopic", page_icon="🤗")
 df = pd.read_csv("bertopic_results.csv")
 st.title("Topic modeling using BERTopic")
 
-st.markdown("Mengambil 15 topik dan berikut 10 contoh dari isi topik :")
-st.dataframe(df.sample(10))
-
-st.subheader("Distribution of topics in the collection of articles.")
+st.subheader("Distribusi topik di artikel.")
 topic_distribution = df['topic'].value_counts().sort_index()
 st.bar_chart(topic_distribution)
 
