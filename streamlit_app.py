@@ -28,9 +28,9 @@ if search_term:
     filtered_df = df[df['content'].str.contains(search_term, case=False)]
     st.write(filtered_df)
 
+# Display All Data
 st.subheader("All Data")
 st.dataframe(df)
-
 
 st.subheader('kata teratas dan WordCloud dari topik')
 topic_selected = st.selectbox('Select a Topic', sorted(df['topic'].unique()))
