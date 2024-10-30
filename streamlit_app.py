@@ -1,70 +1,135 @@
+
 import streamlit as st
-import pandas as pd
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-import re
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import plotly.express as px
 
-st.set_page_config(page_title="BERTopic", page_icon="📝")
+# Judul Aplikasi
+st.title("Pencarian Kalimat dengan Sentence-BERT")
 
-df = pd.read_csv("bertopic_results1.csv")
-st.title("Topic modeling using BERTopic")
+# Deskripsi Aplikasi
+st.write("""
+Aplikasi ini memungkinkan Anda mencari kalimat yang paling mirip dari daftar kalimat yang telah disediakan menggunakan model Sentence-BERT.
+""")
 
-st.subheader("Distribusi topik di artikel.")
-topic_distribution = df['topic'].value_counts().sort_index()
-st.bar_chart(topic_distribution)
+# Daftar Kalimat
+kalimat = [
+    "AI digunakan untuk mengolah data dalam jumlah besar.",
+    "AI sering diterapkan dalam pengolahan data skala besar.",
+    "Penggunaan AI dapat membantu menganalisis data yang sangat banyak.",
+    "Data dalam jumlah besar menjadi lebih mudah diproses dengan bantuan AI.",
+    "AI mempermudah analisis data besar dengan lebih efisien.",
+    "Machine learning memungkinkan mesin belajar dari pengalaman.",
+    "Algoritma machine learning memproses data untuk menghasilkan prediksi.",
+    "Jaringan saraf tiruan sering digunakan dalam deep learning.",
+    "Model AI berkembang dengan pelatihan menggunakan dataset berkualitas.",
+    "Kecerdasan buatan banyak diterapkan di berbagai industri.",
+    "Deep learning meningkatkan kemampuan AI dalam memahami pola kompleks.",
+    "AI dapat mengenali gambar dengan akurasi tinggi.",
+    "Natural Language Processing memungkinkan AI memahami bahasa manusia.",
+    "Robotik menggunakan AI untuk meningkatkan otomatisasi produksi.",
+    "AI membantu dalam deteksi dini penyakit melalui analisis data medis.",
+    "Sistem rekomendasi menggunakan AI untuk menyarankan produk kepada pengguna.",
+    "AI berperan dalam pengembangan kendaraan otonom.",
+    "Pengolahan bahasa alami digunakan AI dalam penerjemahan otomatis.",
+    "AI meningkatkan efisiensi operasional di sektor logistik.",
+    "Pengenalan suara oleh AI memudahkan interaksi manusia dengan teknologi.",
+    "AI digunakan dalam analisis sentimen media sosial.",
+    "Keamanan siber memanfaatkan AI untuk mendeteksi ancaman.",
+    "AI membantu dalam pengelolaan energi secara lebih efektif.",
+    "Pendidikan diperkaya dengan AI melalui pembelajaran yang dipersonalisasi.",
+    "AI digunakan dalam peramalan cuaca untuk prediksi yang lebih akurat.",
+    "Teknologi AI mendukung pengembangan smart home.",
+    "AI membantu dalam optimasi rantai pasokan perusahaan.",
+    "Penggunaan AI dalam industri finansial meningkatkan analisis risiko.",
+    "AI digunakan dalam pencarian informasi yang lebih relevan di internet.",
+    "AI membantu dalam pengelolaan sampah dengan sistem pengenalan objek.",
+    "Sistem keamanan menggunakan AI untuk pengawasan yang lebih canggih.",
+    "AI digunakan dalam pembuatan konten digital secara otomatis.",
+    "Analisis pasar dengan AI membantu bisnis memahami tren konsumen.",
+    "AI meningkatkan pengalaman pengguna melalui personalisasi layanan.",
+    "Penggunaan AI dalam kesehatan mental membantu dalam diagnosis awal.",
+    "AI digunakan dalam industri hiburan untuk menciptakan efek visual yang realistis.",
+    "Sistem pembayaran otomatis memanfaatkan AI untuk deteksi penipuan.",
+    "AI membantu dalam penelitian ilmiah dengan menganalisis data eksperimen.",
+    "Penggunaan AI dalam agrikultur meningkatkan hasil panen melalui analisis tanah.",
+    "AI digunakan dalam desain arsitektur untuk menciptakan bangunan yang efisien.",
+    "AI membantu dalam pelacakan inventaris secara real-time.",
+    "Penggunaan AI dalam pemasaran digital meningkatkan efektivitas kampanye.",
+    "AI digunakan dalam pengembangan obat dengan mempercepat penemuan molekul baru.",
+    "Sistem pendukung keputusan perusahaan memanfaatkan AI untuk strategi bisnis.",
+    "AI membantu dalam manajemen risiko keuangan dengan analisis prediktif.",
+    "Penggunaan AI dalam transportasi umum meningkatkan ketepatan waktu layanan."
+]
 
-def contnet_topwords(topic):
-    topic_df = df[df['topic'] == topic]
-    text = ' '.join(topic_df['content'])
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(plt)
-    
-search_term = st.text_input("Search for a topic or keyword:")
 
-if search_term:
-    filtered_df = df[df['content'].str.contains(search_term, case=False)]
-    st.write(filtered_df)
+# Load Model Sentence-BERT
+@st.cache_resource
+def load_model():
+    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')  # Model yang mendukung Bahasa Indonesia
+    return model
 
-# Display All Data
-st.subheader("All Data")
-st.dataframe(df)
+model = load_model()
 
-st.subheader('kata teratas dan WordCloud dari topik')
-topic_selected = st.selectbox('Select a Topic', sorted(df['topic'].unique()))
+# Generate Embeddings untuk Kalimat
+# @st.cache_data
+def generate_embeddings(model, sentences):
+    embeddings = model.encode(sentences)
+    return embeddings
 
-topic_df = df[df['topic'] == topic_selected]
-all_content = ' '.join(topic_df['content'])
+embeddings = generate_embeddings(model, kalimat)
 
-words = re.findall(r'\b\w+\b', all_content.lower())
+# Input Query dari Pengguna
+query = st.text_input("Masukkan kalimat pencarian Anda:")
 
-word_counts = pd.Series(words).value_counts()
-top_words = word_counts.head(10)
-st.write(f"kata teratas dari topik {topic_selected}")
-st.write(top_words)
+if query:
+    # Generate Embedding untuk Query
+    query_embedding = model.encode([query])
 
-top_articles = topic_df.head(10)  
-st.write(f"Top 10 Topik {topic_selected}")
-st.write(top_articles[['content', 'topic']])
+    # Hitung Cosine Similarity
+    cosine_similarities = cosine_similarity(query_embedding, embeddings)
+    similarity_scores = cosine_similarities[0]
 
-st.write(f"Word Cloud topik {topic_selected}")
-contnet_topwords(topic_selected)
+    # Urutkan dan Ambil 5 Teratas
+    sorted_indices = np.argsort(similarity_scores)[::-1]
+    lima_besar = sorted_indices[:5]
 
-# Bar Chart
-st.subheader("Topic Distribution Bar Chart")
-topic_distribution = df['topic'].value_counts().sort_index()
-st.bar_chart(topic_distribution)
+    # Siapkan Hasil
+    results = [
+        {
+            "Document": index + 1,
+            "Kalimat": kalimat[index],
+            "Skor Kemiripan": f"{similarity_scores[index]:.2f}"
+        }
+        for index in lima_besar if similarity_scores[index] > 0
+    ]
 
-# Pie Chart
-st.subheader("Topic Distribution Pie Chart")
-fig, ax = plt.subplots()
-ax.pie(topic_distribution, labels=topic_distribution.index, autopct='%1.1f%%')
-ax.axis('equal')
-st.pyplot(fig)
+    if results:
+        st.subheader("Hasil Pencarian:")
+        for result in results:
+            st.write(f"**Document {result['Document']}**: {result['Kalimat']} (Skor Kemiripan: {result['Skor Kemiripan']})")
 
-st.subheader("Topic Visualization")
-fig, ax = plt.subplots(figsize=(10, 7))
-model.visualize_topics().style.background_gradient(cmap='viridis').set_precision(2)
-st.pyplot(fig)
+ # Visualisasi dengan Plotly
+        st.subheader("Visualisasi Skor Kemiripan:")
+        df = {
+            "Kalimat": [result["Kalimat"] for result in results],
+            "Skor Kemiripan": [result["Skor Kemiripan"] for result in results]
+        }
+
+        fig = px.bar(
+            df,
+            x="Kalimat",
+            y="Skor Kemiripan",
+            title="Skor Kemiripan Top 5 Kalimat",
+            labels={"Kalimat": "Kalimat", "Skor Kemiripan": "Skor"},
+            height=400
+        )
+        st.plotly_chart(fig)
+
+    else:
+        st.write("Data tidak ada yang cocok dengan query Anda.")
+
+st.subheader("Daftar Semua Kalimat:")
+for i, kal in enumerate(kalimat, 1):
+    st.write(f"{i}. {kal}")
