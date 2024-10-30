@@ -1,138 +1,146 @@
-
 import streamlit as st
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 import numpy as np
-import plotly.express as px
-
-# Judul Aplikasi
-st.title("Pencarian Kalimat dengan Sentence-BERT")
-
-# Deskripsi Aplikasi
+import pandas as pd
+import matplotlib.pyplot as plt
+# Title and description of the app
+st.title("Sentence Search and Clustering with Sentence-BERT")
 st.write("""
-Aplikasi ini memungkinkan Anda mencari kalimat yang paling mirip dari daftar kalimat yang telah disediakan menggunakan model Sentence-BERT.
+This app allows you to search for sentences that closely match your input from a
+list of predefined sentences using Sentence-BERT. Each result links to further
+details about the document.
+Additionally, you can cluster sentences into different groups based on their
+semantic similarity and visualize the clusters.
 """)
+# Upload CSV file
+uploaded_file = st.file_uploader("Upload a CSV file", type="csv")
+if uploaded_file is not None:
+# Load sentences from a CSV file with error handling
+@st.cache_data
 
-# Daftar Kalimat
-kalimat = [
-    "AI digunakan untuk mengolah data dalam jumlah besar.",
-    "AI sering diterapkan dalam pengolahan data skala besar.",
-    "Penggunaan AI dapat membantu menganalisis data yang sangat banyak.",
-    "Data dalam jumlah besar menjadi lebih mudah diproses dengan bantuan AI.",
-    "AI mempermudah analisis data besar dengan lebih efisien.",
-    "Machine learning memungkinkan mesin belajar dari pengalaman.",
-    "Algoritma machine learning memproses data untuk menghasilkan prediksi.",
-    "Jaringan saraf tiruan sering digunakan dalam deep learning.",
-    "Model AI berkembang dengan pelatihan menggunakan dataset berkualitas.",
-    "Kecerdasan buatan banyak diterapkan di berbagai industri.",
-    "Deep learning meningkatkan kemampuan AI dalam memahami pola kompleks.",
-    "AI dapat mengenali gambar dengan akurasi tinggi.",
-    "Natural Language Processing memungkinkan AI memahami bahasa manusia.",
-    "Robotik menggunakan AI untuk meningkatkan otomatisasi produksi.",
-    "AI membantu dalam deteksi dini penyakit melalui analisis data medis.",
-    "Sistem rekomendasi menggunakan AI untuk menyarankan produk kepada pengguna.",
-    "AI berperan dalam pengembangan kendaraan otonom.",
-    "Pengolahan bahasa alami digunakan AI dalam penerjemahan otomatis.",
-    "AI meningkatkan efisiensi operasional di sektor logistik.",
-    "Pengenalan suara oleh AI memudahkan interaksi manusia dengan teknologi.",
-    "AI digunakan dalam analisis sentimen media sosial.",
-    "Keamanan siber memanfaatkan AI untuk mendeteksi ancaman.",
-    "AI membantu dalam pengelolaan energi secara lebih efektif.",
-    "Pendidikan diperkaya dengan AI melalui pembelajaran yang dipersonalisasi.",
-    "AI digunakan dalam peramalan cuaca untuk prediksi yang lebih akurat.",
-    "Teknologi AI mendukung pengembangan smart home.",
-    "AI membantu dalam optimasi rantai pasokan perusahaan.",
-    "Penggunaan AI dalam industri finansial meningkatkan analisis risiko.",
-    "AI digunakan dalam pencarian informasi yang lebih relevan di internet.",
-    "AI membantu dalam pengelolaan sampah dengan sistem pengenalan objek.",
-    "Sistem keamanan menggunakan AI untuk pengawasan yang lebih canggih.",
-    "AI digunakan dalam pembuatan konten digital secara otomatis.",
-    "Analisis pasar dengan AI membantu bisnis memahami tren konsumen.",
-    "AI meningkatkan pengalaman pengguna melalui personalisasi layanan.",
-    "Penggunaan AI dalam kesehatan mental membantu dalam diagnosis awal.",
-    "AI digunakan dalam industri hiburan untuk menciptakan efek visual yang realistis.",
-    "Sistem pembayaran otomatis memanfaatkan AI untuk deteksi penipuan.",
-    "AI membantu dalam penelitian ilmiah dengan menganalisis data eksperimen.",
-    "Penggunaan AI dalam agrikultur meningkatkan hasil panen melalui analisis tanah.",
-    "AI digunakan dalam desain arsitektur untuk menciptakan bangunan yang efisien.",
-    "AI membantu dalam pelacakan inventaris secara real-time.",
-    "Penggunaan AI dalam pemasaran digital meningkatkan efektivitas kampanye.",
-    "AI digunakan dalam pengembangan obat dengan mempercepat penemuan molekul baru.",
-    "Sistem pendukung keputusan perusahaan memanfaatkan AI untuk strategi bisnis.",
-    "AI membantu dalam manajemen risiko keuangan dengan analisis prediktif.",
-    "Penggunaan AI dalam transportasi umum meningkatkan ketepatan waktu layanan."
-]
+def load_sentences(file):
+try:
+# Attempt to load the CSV, adjusting the delimiter and skipping bad
 
+lines
 
-# Load Model Sentence-BERT
+df = pd.read_csv(file, delimiter=',', on_bad_lines='skip')
+df.columns = df.columns.str.strip() # Strip whitespace from column
+
+names
+
+return df
+except Exception as e:
+st.error(f"Error reading CSV file: {e}")
+return None
+# Load sentences
+df = load_sentences(uploaded_file)
+if df is not None:
+# Choose the column to use for text
+text_column = st.selectbox("Select the column to use for text",
+df.columns)
+# Filter rows with non-null values in selected column
+df = df[df[text_column].notna()]
+# Convert to list of dictionaries for compatibility with existing code
+sentences = df.to_dict(orient='records')
+# Load Sentence-BERT model
 @st.cache_resource
 def load_model():
-    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')  # Model yang mendukung Bahasa Indonesia
-    return model
-
+model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+return model
 model = load_model()
-
-# Generate Embeddings untuk Kalimat
-# @st.cache_data
-def generate_embeddings(model, sentences):
-    embeddings = model.encode(sentences)
-    return embeddings
-
-embeddings = generate_embeddings(model, kalimat)
-
-# Input Query dari Pengguna
-query = st.text_input("Masukkan kalimat pencarian Anda:")
-
+# Generate embeddings and cache the results
+@st.cache_data
+def generate_embeddings(_model, sentences):
+embeddings = _model.encode(sentences)
+return embeddings
+# Extract embeddings for each sentence
+embeddings = generate_embeddings(model, [s[text_column] for s in
+sentences])
+# Input query from user
+query = st.text_input("Enter your search query:")
+# Add a search button
+if st.button("Search"):
 if query:
-    # Generate Embedding untuk Query
-    query_embedding = model.encode([query])
+# Generate embedding for query
+query_embedding = model.encode([query])
+# Compute cosine similarity between query and sentences
+cosine_similarities = cosine_similarity(query_embedding,
 
-    # Hitung Cosine Similarity
-    cosine_similarities = cosine_similarity(query_embedding, embeddings)
-    similarity_scores = cosine_similarities[0]
+embeddings)
 
-    # Urutkan dan Ambil 5 Teratas
-    sorted_indices = np.argsort(similarity_scores)[::-1]
-    lima_besar = sorted_indices[:5]
+similarity_scores = cosine_similarities[0]
+# Sort and select top 5 results
+sorted_indices = np.argsort(similarity_scores)[::-1]
 
-    # Siapkan Hasil
-    results = [
-        {
-            "Document": index + 1,
-            "Kalimat": kalimat[index],
-            "Skor Kemiripan": f"{similarity_scores[index]:.2f}"
-        }
-        for index in lima_besar if similarity_scores[index] > 0
-    ]
+top_5_indices = sorted_indices[:5]
+# Prepare and display results
+st.subheader("Search Results:")
+results_found = False
+for index in top_5_indices:
+score = similarity_scores[index]
+if score > 0:
+sentence = sentences[index]
+with st.expander(f"Document {index + 1}: (Similarity
 
-    if results:
-        st.subheader("Hasil Pencarian:")
-        for result in results:
-            st.write(f"**Document {result['Document']}**: {result['Kalimat']} (Skor Kemiripan: {result['Skor Kemiripan']})")
+Score: {score:.2f})", expanded=False):
 
+st.write(f"[{sentence[text_column]}]")
+results_found = True
+if not results_found:
+st.write("No matching results found for your query.")
+else:
+st.warning("Please enter a query before searching.")
+# Clustering section
+st.subheader("Cluster Sentences with K-Means")
+# Slider to select the number of clusters
+num_clusters = st.slider("Select number of clusters for K-Means:",
+min_value=2, max_value=10, value=5)
+# Cluster the embeddings using K-Means
+def cluster_sentences(embeddings, num_clusters):
+kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+cluster_labels = kmeans.fit_predict(embeddings)
+return cluster_labels
+# Perform clustering and display results
+if st.button("Cluster Sentences"):
+cluster_labels = cluster_sentences(embeddings, num_clusters)
+# Add cluster labels to each sentence in the DataFrame
+df['cluster'] = cluster_labels
+# Reduce dimensions for visualization
+pca = PCA(n_components=2)
+reduced_embeddings = pca.fit_transform(embeddings)
+# Plotting the clusters
+plt.figure(figsize=(10, 6))
+for i in range(num_clusters):
+plt.scatter(reduced_embeddings[df['cluster'] == i, 0],
+reduced_embeddings[df['cluster'] == i, 1],
+label=f'Cluster {i + 1}')
+plt.title('Sentence Clustering Visualization')
+plt.xlabel('PCA Component 1')
+plt.ylabel('PCA Component 2')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+# Display the plot in Streamlit
+st.pyplot(plt)
 
- # Visualisasi dengan Plotly
-        st.subheader("Visualisasi Skor Kemiripan:")
-        df = {
-            "Kalimat": [result["Kalimat"] for result in results],
-            "Skor Kemiripan": [result["Skor Kemiripan"] for result in results]
-        }
+st.subheader("Clustering Results:")
+for cluster in range(num_clusters):
+st.write(f"\n### Cluster {cluster + 1}")
+cluster_sentences = df[df['cluster'] ==
 
-        fig = px.bar(
-            df,
-            x="Kalimat",
-            y="Skor Kemiripan",
-            title="Skor Kemiripan Top 5 Kalimat",
-            labels={"Kalimat": "Kalimat", "Skor Kemiripan": "Skor"},
-            height=400
-        )
-        st.plotly_chart(fig)
+cluster][text_column].values
 
-    else:
-        st.write("Data tidak ada yang cocok dengan query Anda.")
+for sentence in cluster_sentences[:5]: # Display up to 5
 
-st.subheader("Daftar Semua Kalimat:")
-for i, kal in enumerate(kalimat, 1):
-    st.write(f"{i}. {kal}")
+sentences per cluster
 
+st.write(f"- {sentence}")
 
+else:
+st.warning("Unable to load the CSV file. Please check the file format.")
+else:
+st.warning("Please upload a CSV file to proceed.")
