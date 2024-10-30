@@ -2,9 +2,3 @@ streamlit
 BERTopic
 Pandas
 WordCloud
-sentence_transformers
-sklearn.metrics.pairwise
-numpy
-plotly.express
-seaborn
-matplotlib.pyplot
