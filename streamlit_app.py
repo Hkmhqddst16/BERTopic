@@ -22,6 +22,15 @@ def contnet_topwords(topic):
     plt.axis('off')
     st.pyplot(plt)
     
+search_term = st.text_input("Search for a topic or keyword:")
+
+if search_term:
+    filtered_df = df[df['content'].str.contains(search_term, case=False)]
+    st.write(filtered_df)
+
+st.subheader("All Data")
+st.dataframe(df)
+
 
 st.subheader('kata teratas dan WordCloud dari topik')
 topic_selected = st.selectbox('Select a Topic', sorted(df['topic'].unique()))
@@ -42,3 +51,20 @@ st.write(top_articles[['content', 'topic']])
 
 st.write(f"Word Cloud topik {topic_selected}")
 contnet_topwords(topic_selected)
+
+# Bar Chart
+st.subheader("Topic Distribution Bar Chart")
+topic_distribution = df['topic'].value_counts().sort_index()
+st.bar_chart(topic_distribution)
+
+# Pie Chart
+st.subheader("Topic Distribution Pie Chart")
+fig, ax = plt.subplots()
+ax.pie(topic_distribution, labels=topic_distribution.index, autopct='%1.1f%%')
+ax.axis('equal')
+st.pyplot(fig)
+
+st.subheader("Topic Visualization")
+fig, ax = plt.subplots(figsize=(10, 7))
+model.visualize_topics().style.background_gradient(cmap='viridis').set_precision(2)
+st.pyplot(fig)
