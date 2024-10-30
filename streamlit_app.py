@@ -109,6 +109,14 @@ if query:
         st.subheader("Hasil Pencarian:")
         for result in results:
             st.write(f"**Document {result['Document']}**: {result['Kalimat']} (Skor Kemiripan: {result['Skor Kemiripan']})")
+            # Visualisasi Heatmap
+
+    st.subheader("Heatmap Kemiripan Kalimat")
+    sns.heatmap(cosine_similarities, annot=True, fmt=".2f")
+    plt.xlabel("Kalimat")
+    plt.ylabel("Kalimat")
+    st.pyplot(plt.gcf())
+
 
  # Visualisasi dengan Plotly
         st.subheader("Visualisasi Skor Kemiripan:")
@@ -134,13 +142,4 @@ st.subheader("Daftar Semua Kalimat:")
 for i, kal in enumerate(kalimat, 1):
     st.write(f"{i}. {kal}")
 
-# Visualisasi Heatmap
-if results:
-    # ... (bagian kode untuk menampilkan hasil pencarian)
-
-    st.subheader("Heatmap Kemiripan Kalimat")
-    sns.heatmap(cosine_similarities, annot=True, fmt=".2f")
-    plt.xlabel("Kalimat")
-    plt.ylabel("Kalimat")
-    st.pyplot(plt.gcf())
 
