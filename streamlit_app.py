@@ -136,7 +136,11 @@ for i, kal in enumerate(kalimat, 1):
 
 # Visualisasi Heatmap
 if results:
-    # ... (Kode untuk menghitung matriks kemiripan)
-    fig = px.imshow(similarity_matrix, text_auto=True, aspect="auto")
-    st.plotly_chart(fig)
+    # ... (bagian kode untuk menampilkan hasil pencarian)
+
+    st.subheader("Heatmap Kemiripan Kalimat")
+    sns.heatmap(cosine_similarities, annot=True, fmt=".2f")
+    plt.xlabel("Kalimat")
+    plt.ylabel("Kalimat")
+    st.pyplot(plt.gcf())
 
