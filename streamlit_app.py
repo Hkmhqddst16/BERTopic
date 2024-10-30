@@ -133,3 +133,22 @@ if query:
 st.subheader("Daftar Semua Kalimat:")
 for i, kal in enumerate(kalimat, 1):
     st.write(f"{i}. {kal}")
+
+
+# Visualisasi Word Cloud
+def create_wordcloud(text):
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    plt.figure(figsize=(10,   
+ 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')   
+
+    st.pyplot(plt)
+
+# ... (Kode untuk menampilkan hasil pencarian)
+
+# Visualisasi Heatmap
+if results:
+    # ... (Kode untuk menghitung matriks kemiripan)
+    fig = px.imshow(similarity_matrix, text_auto=True, aspect="auto")
+    st.plotly_chart(fig)
